@@ -4,8 +4,8 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 use clap::Parser;
 use base64::{engine::general_purpose};
-use tokio::{fs, net::{TcpListener, TcpStream}, io::{AsyncReadExt, AsyncWriteExt, AsyncRead, Error}};
-use std::io::Cursor;
+use tokio::{fs, net::{TcpListener, TcpStream}, io::{AsyncReadExt, AsyncWriteExt, AsyncRead, Error}, time::timeout};
+use std::{io::Cursor, time::Duration};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -38,7 +38,7 @@ async fn main() {
         let icon = server_icon.clone();
 
         tokio::spawn(async move {
-            if let Some(message) = handle_connection(stream, icon).await {
+            if let Ok(Some(message)) = timeout(Duration::from_secs(30), handle_connection(stream, icon)).await {
                 println!("{message}");
 
                 if let Some(webhook) = webhook
