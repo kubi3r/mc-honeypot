@@ -38,7 +38,7 @@ async fn main() {
         let icon = server_icon.clone();
 
         tokio::spawn(async move {
-            if let Ok(message) = handle_connection(stream, icon).await {
+            if let Some(message) = handle_connection(stream, icon).await {
                 println!("{message}");
 
                 if let Some(webhook) = webhook
@@ -50,18 +50,18 @@ async fn main() {
     }
 }
 
-async fn handle_connection(mut stream: TcpStream, server_icon: Option<String>) -> Result<String, Error> {
-    let (packet_id, data) = read_packet(&mut stream).await?; // handshake
+async fn handle_connection(mut stream: TcpStream, server_icon: Option<String>) -> Option<String> {
+    let (packet_id, data) = read_packet(&mut stream).await.ok()?; // handshake
 
     if packet_id != 0 {
-        return Err(Error::other(""))
+        return None
     }
     
-    match read_handshake(&mut Cursor::new(data)).await? {
+    match read_handshake(&mut Cursor::new(data)).await.ok()? {
         Handshake::Status => {
-            let packet_id = read_packet(&mut stream).await?.0; // status request
+            let packet_id = read_packet(&mut stream).await.ok()?.0; // status request
             if packet_id != 0 {
-                return Err(Error::other(""))
+                return None
             }
 
             if send_status_resp(&mut stream, server_icon).await.is_ok() { // status response
@@ -72,24 +72,24 @@ async fn handle_connection(mut stream: TcpStream, server_icon: Option<String>) -
                 }
             }
 
-            Ok(format!("STATUS `{}`", stream.peer_addr()?.ip()))
+            Some(format!("STATUS `{}`", stream.peer_addr().ok()?.ip()))
         },
         Handshake::Login => {
-            let (packet_id, data) = read_packet(&mut stream).await?; // login start
+            let (packet_id, data) = read_packet(&mut stream).await.ok()?; // login start
             if packet_id != 0 {
-                return Err(Error::other(""))
+                return None
             }
 
-            let username = read_string(&mut Cursor::new(data)).await?.0;
+            let username = read_string(&mut Cursor::new(data)).await.ok()?.0;
             let uuid = Uuid::new_v3(&Uuid::NAMESPACE_DNS, format!("OfflinePlayer:{username}").as_bytes());
 
             write_packet(&mut stream, 2, &[ // login success
                 uuid.as_bytes(),
                 &prefix_str_len(&username)[..],
                 &write_varint(0),
-            ].concat()).await?;
+            ].concat()).await.ok()?;
             
-            Ok(format!("JOIN `{}`, username: `{username}`", stream.peer_addr()?.ip()))
+            Some(format!("JOIN `{}`, username: `{username}`", stream.peer_addr().ok()?.ip()))
         },
     }
 }
