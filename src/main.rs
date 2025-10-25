@@ -12,7 +12,7 @@ use base64::{engine::general_purpose};
 struct Args {
     /// Webhook to send logs to
     #[arg(short, long)]
-    webhook: String,
+    webhook: Option<String>,
 
     /// Path to server icon
     #[arg(short, long)]
@@ -38,8 +38,11 @@ fn main() {
             Ok(stream) => {
                 if let Ok(message) = handle_connection(stream, &server_icon) {
                     println!("{message}");
-                    if let Err(e) = send_webhook(message, &args.webhook) {
-                        println!("failed to send messsage to webhook: {e}")
+
+                    if let Some(webhook) = &args.webhook {
+                        if let Err(e) = send_webhook(message, webhook) {
+                            println!("failed to send messsage to webhook: {e}")
+                        }
                     }
                 }
 

@@ -1,9 +1,11 @@
 # mc-honeypot
 
-my first rust project, a honeypot that pretends to be a minecraft server and sends logs to a webhook
+my first rust project, a honeypot that pretends to be a minecraft server
 
 server list response is editable in `status_resp.json`
 
-if the --server-icon {PATH} argument is specified, the icon at the path will be sent with the server list response
+add the --webhook {URL} argument to send logs to a webhook
+
+add the --server-icon {PATH} argument to use the server icon at the path
 
 also it runs on a single thread so it kinda sucks
