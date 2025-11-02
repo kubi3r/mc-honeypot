@@ -1,7 +1,6 @@
 use mc_honeypot::{read_varint, write_varint, read_string, prefix_str_len, send_webhook};
 use base64::Engine;
 use serde_json::{json, Value};
-use uuid::Uuid;
 use clap::Parser;
 use base64::{engine::general_purpose};
 use tokio::{fs, net::{TcpListener, TcpStream}, io::{AsyncReadExt, AsyncWriteExt, AsyncRead, Error}, time::timeout};
@@ -81,13 +80,8 @@ async fn handle_connection(mut stream: TcpStream, server_icon: Option<String>) -
             }
 
             let username = read_string(&mut Cursor::new(data)).await.ok()?.0;
-            let uuid = Uuid::new_v3(&Uuid::NAMESPACE_DNS, format!("OfflinePlayer:{username}").as_bytes());
 
-            write_packet(&mut stream, 2, &[ // login success
-                uuid.as_bytes(),
-                &prefix_str_len(&username)[..],
-                &write_varint(0),
-            ].concat()).await.ok()?;
+            write_packet(&mut stream, 0, &prefix_str_len(r#"{"translate":"multiplayer.disconnect.not_whitelisted"}"#)).await.ok()?;// disconnect
             
             Some(format!("JOIN `{}`, username: `{username}`", stream.peer_addr().ok()?.ip()))
         },
