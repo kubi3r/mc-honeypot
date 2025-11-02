@@ -30,7 +30,7 @@ async fn main() {
         server_icon = Some(format!("data:image/png;base64,{base64_encoded}"));
     }
 
-    let listener = TcpListener::bind("127.0.0.1:25565").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
     loop {
         let (stream, _) = listener.accept().await.unwrap();
 
